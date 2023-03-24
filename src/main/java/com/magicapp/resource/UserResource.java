@@ -58,8 +58,6 @@ public class UserResource extends ExceptionHandling {
     public static final String USER_DELETED_SUCCESFULLY = "User deleted succesfully";
     private Logger LOGGER = LoggerFactory.getLogger(getClass());
     private AuthenticationManager authenticationManager;
-//    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//    private String currentPrincipalName = authentication.getName();
     private UserService userService;
     private JWTTokenProvider jwtTokenProvider;
 

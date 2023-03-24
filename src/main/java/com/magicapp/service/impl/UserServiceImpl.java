@@ -84,7 +84,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     public User register(String firstName, String lastName, String username, String email) throws UserNotFoundException, UsernameExistException, EmailExistException, MessagingException {
         validateNewUsernameAndEmail(EMPTY, username, email);
         User user = new User();
-        user.setUserId(generateUserId());
         String password = generatePassword();
         String encodedPassword = encodePassword(password);
         user.setFirstName(firstName);
@@ -124,7 +123,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         validateNewUsernameAndEmail(EMPTY, username, email);
         User user = new User();
         String password = generatePassword();
-        user.setUserId(generateUserId());
         user.setFirstName(firstName);
         user.setLastName(lastName);
         user.setJoinDate(new Date());
@@ -137,9 +135,9 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         user.setAuthorities(getRoleEnumName(role).getAuthorities());
         user.setProfileImageUrl(getTemporaryProfileImageUrl(username));
         userRepository.save(user);
-        if(profileImage == null){
-            profileImage = generateProfileImage(user);
-        }
+//        if(profileImage == null){
+//            profileImage = generateProfileImage(user);
+//        }
         saveProfileImage(user, profileImage);
         LOGGER.info("New user password: " + password);
         return user;
@@ -168,7 +166,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         User user =  userRepository.findUserByUsername(username);
         Path userFolder = Paths.get(USER_FOLDER + user.getUsername()).toAbsolutePath().normalize();
         FileUtils.deleteDirectory(new File(userFolder.toString()));
-        userRepository.deleteById(user.getId());
+        userRepository.deleteById(user.getUserId());
     }
 
     @Override
@@ -272,10 +270,10 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             if(currentUser == null) {
                 throw new UserNotFoundException(NO_USER_FOUND_BY_USERNAME + currentUsername);
             }
-            if(userByNewUsername != null && !currentUser.getId().equals(userByNewUsername.getId())) {
+            if(userByNewUsername != null && !currentUser.getUserId().equals(userByNewUsername.getUserId())) {
                 throw new UsernameExistException(USERNAME_ALREADY_EXISTS);
             }
-            if(userByNewEmail != null && !currentUser.getId().equals(userByNewEmail.getId())) {
+            if(userByNewEmail != null && !currentUser.getUserId().equals(userByNewEmail.getUserId())) {
                 throw new EmailExistException(EMAIL_ALREADY_EXISTS);
             }
             return currentUser;
