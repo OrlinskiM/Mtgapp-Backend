@@ -19,7 +19,7 @@ import java.util.Set;
 public class Tournament implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Long tournamentId;
     private String tournamentString;

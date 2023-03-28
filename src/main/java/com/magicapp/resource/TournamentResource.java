@@ -47,6 +47,8 @@ public class TournamentResource {
         Tournament tournament = tournamentService.findByTournamentString(tournamentString);
         User user = userService.findUserByUserId(userId);
         tournament.addPlayer(user);
+        Guest guest = new Guest("ja", "ja", "asd", "ja");
+        tournament.addPlayer(guest);
         RoundMatching roundMatching = new RoundMatching(1);
         tournament.addRoundMatching(roundMatching);
         roundMatching.addGame(new Game(1,user, (Player) tournament.getPlayers().toArray()[0]));
