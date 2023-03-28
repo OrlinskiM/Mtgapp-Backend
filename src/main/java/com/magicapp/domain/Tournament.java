@@ -12,7 +12,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Getter @Setter @NoArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
 @Table(name = "tournament")
 public class Tournament implements Serializable {
     @Id
@@ -20,27 +22,32 @@ public class Tournament implements Serializable {
     @Column(nullable = false, updatable = false)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Long tournamentId;
-    @ManyToMany(
-            cascade = {CascadeType.MERGE, CascadeType.PERSIST}
-    )
-    @JoinTable(
-            name = "user_tournament",
-            joinColumns = @JoinColumn(name = "tournamentId"),
-            inverseJoinColumns = @JoinColumn(name = "userId")
-    )
-    private Set<User> users = new HashSet<>();
     private String tournamentString;
     private int rounds;
     private int currentRound;
-    @OneToMany(mappedBy="tournament", cascade = CascadeType.ALL)
-    private Set<Game> games = new HashSet<>();
     private boolean isFinished;
     private Date creationDate;
     private Date finishDate;
+    @ManyToOne
+    @JoinColumn(name = "owner_user_id")
+    private User owner;
+    @ManyToMany(
+            cascade = {CascadeType.ALL}
+    )
+    @JoinTable(
+            name = "player_tournament",
+            joinColumns = @JoinColumn(name = "tournamentId"),
+            inverseJoinColumns = @JoinColumn(name = "userId")
+    )
+    private Set<Player> players = new HashSet<>();
+    @OneToMany(mappedBy="tournament", cascade = CascadeType.ALL)
+    private Set<Game> allGames = new HashSet<>();
+    @OneToMany(mappedBy="tournament", cascade = CascadeType.ALL)
+    private Set<RoundMatching> roundMatchings = new HashSet<>();
 
 
 
-    public Tournament(Long tournamentId, User ownerId, String tournamentString, boolean isFinished, Date creationDate, Date finishDate) {
+    public Tournament(Long tournamentId, String tournamentString, boolean isFinished, Date creationDate, Date finishDate) {
         this.tournamentId = tournamentId;
 //        this.ownerId = ownerId;
         this.tournamentString = tournamentString;
@@ -49,23 +56,33 @@ public class Tournament implements Serializable {
         this.finishDate = finishDate;
     }
 
-    public void addUser(User user) {
-        this.users.add(user);
-        user.getTournaments().add(this);
-    }
-
-    public void removeUser(User user) {
-        this.users.remove(user);
-        user.getTournaments().remove(this);
+    public void addPlayer(Player player) {
+        this.players.add(player);
+        player.getTournaments().add(this);
     }
 
     public void addGame(Game game) {
-        this.games.add(game);
+        this.allGames.add(game);
         game.setTournament(this);
     }
 
-    public void removeGame(Game game) {
-        this.games.remove(game);
+    public void addRoundMatching(RoundMatching roundMatching) {
+        this.roundMatchings.add(roundMatching);
+        roundMatching.setTournament(this);
     }
+
+    public void removeUser(User user) {
+        this.players.remove(user);
+        user.getTournaments().remove(this);
+    }
+
+//    public void addGame(Game game) {
+//        this.allGames.add(game);
+//        game.setTournament(this);
+//    }
+//
+//    public void removeGame(Game game) {
+//        this.allGames.remove(game);
+//    }
 
 }

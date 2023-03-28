@@ -188,6 +188,11 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         return user;
     }
 
+    @Override
+    public User findUserByUserId(Long userId) {
+        return userRepository.findUserByUserId(userId);
+    }
+
     private MultipartFile generateProfileImage(User user) throws IOException {
         RestTemplate restTemplate = new RestTemplate();
         URL url = new URL ("http://127.0.0.1:7860/sdapi/v1/txt2img");
@@ -200,6 +205,12 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                 "   \"prompt\": \"magic the gathering, " + user.getUsername() + "\"," +
                 "    \"steps\": 15" +
                 "}";
+//        String jsonString = """
+//                {
+//                    "prompt": "magic the gathering, %s",
+//                    "steps": 15
+//                }
+//                """.formatted(user.getUsername());
         try(OutputStream os = con.getOutputStream()) {
             byte[] input = jsonString.getBytes("utf-8");
             os.write(input, 0, input.length);

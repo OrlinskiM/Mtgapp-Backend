@@ -1,10 +1,13 @@
 package com.magicapp.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -20,6 +23,10 @@ public abstract class Player{
     private String lastName;
     private String username;
     private String profileImageUrl;
+
+    @ManyToMany(mappedBy = "players")
+    @JsonIgnore
+    private Set<Tournament> tournaments = new HashSet<>();
 
     public Player(String firstName, String lastName, String username, String profileImageUrl) {
         this.firstName = firstName;

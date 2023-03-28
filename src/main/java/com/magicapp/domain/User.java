@@ -18,9 +18,6 @@ public class User extends Player implements Serializable{
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
     private String email;
-    @ManyToMany(mappedBy = "users")
-    @JsonIgnore
-    private Set<Tournament> tournaments = new HashSet<>();
     private Date lastLoginDate;
     private Date lastLoginDateDisplay;
     private Date joinDate;

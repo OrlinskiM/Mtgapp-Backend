@@ -1,10 +1,10 @@
 package com.magicapp.resource;
 
-import com.magicapp.domain.Game;
-import com.magicapp.domain.Tournament;
-import com.magicapp.domain.User;
+import com.magicapp.domain.*;
 import com.magicapp.repository.TournamentRepository;
 import com.magicapp.repository.UserRepository;
+import com.magicapp.service.TournamentService;
+import com.magicapp.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,30 +16,27 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping(path = { "/tournament"})
 public class TournamentResource {
 
-    private  TournamentRepository tournamentRepository;
+    private UserService userService;
 
-    private UserRepository userRepository;
+    private TournamentService tournamentService;
 
     @Autowired
-    public TournamentResource(TournamentRepository tournamentRepository, UserRepository userRepository) {
-        this.tournamentRepository = tournamentRepository;
-        this.userRepository = userRepository;
+    public TournamentResource(TournamentService tournamentService, UserService userService) {
+        this.tournamentService = tournamentService;
+        this.userService = userService;
     }
 
-    @PostMapping("/{tournamentString}")
-    public ResponseEntity<Tournament> addNewTournament(@PathVariable("tournamentString") String tournamentString){
-        Tournament tournament = new Tournament();
+    @PostMapping("/add")
+    public ResponseEntity<Tournament> addNewTournament(){
         String currentUserName = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findUserByUsername(currentUserName);
-        tournament.addUser(currentUser);
-        tournament.setTournamentString(tournamentString);
-        tournamentRepository.save(tournament);
+        User currentUser = userService.findUserByUsername(currentUserName);
+        Tournament tournament = tournamentService.addNewTournament(currentUser);
         return new ResponseEntity<>(tournament, HttpStatus.OK);
     }
 
     @GetMapping("/{tournamentString}")
     public ResponseEntity<Tournament> getTournament(@PathVariable("tournamentString") String tournamentString){
-        Tournament getTournament = tournamentRepository.findByTournamentString(tournamentString);
+        Tournament getTournament = tournamentService.findByTournamentString(tournamentString);
 
         return new ResponseEntity<>(getTournament, HttpStatus.OK);
     }
@@ -47,12 +44,16 @@ public class TournamentResource {
     @PostMapping("/{tournamentString}/update")
     public ResponseEntity<Tournament> updateTournament(@PathVariable("tournamentString") String tournamentString,
                                                  @RequestParam("userId") Long userId){
-        Tournament tournament = tournamentRepository.findByTournamentString(tournamentString);
-        User user = userRepository.findUserByUserId(userId);
-        tournament.addUser(user);
+        Tournament tournament = tournamentService.findByTournamentString(tournamentString);
+        User user = userService.findUserByUserId(userId);
+        tournament.addPlayer(user);
+        RoundMatching roundMatching = new RoundMatching(1);
+        tournament.addRoundMatching(roundMatching);
+        roundMatching.addGame(new Game(1,user, (Player) tournament.getPlayers().toArray()[0]));
+
 ////        Game game = new Game(2L, user, user);
 //        tournament.addGame(game);
-        tournamentRepository.save(tournament);
+        tournamentService.saveTournament(tournament);
         return new ResponseEntity<>(tournament, HttpStatus.OK);
     }
 }
