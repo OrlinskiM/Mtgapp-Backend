@@ -7,9 +7,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Getter
@@ -31,15 +29,8 @@ public class Tournament implements Serializable {
     @ManyToOne
     @JoinColumn(name = "owner_user_id")
     private User owner;
-    @ManyToMany(
-            cascade = {CascadeType.ALL}
-    )
-    @JoinTable(
-            name = "player_tournament",
-            joinColumns = @JoinColumn(name = "tournamentId"),
-            inverseJoinColumns = @JoinColumn(name = "userId")
-    )
-    private Set<Player> players = new HashSet<>();
+    @OneToMany(mappedBy = "tournament", cascade = CascadeType.ALL)
+    private Set<PlayerParticipation> participations = new HashSet<>();
     @OneToMany(mappedBy="tournament", cascade = CascadeType.ALL)
     private Set<Game> allGames = new HashSet<>();
     @OneToMany(mappedBy="tournament", cascade = CascadeType.ALL)
@@ -57,8 +48,9 @@ public class Tournament implements Serializable {
     }
 
     public void addPlayer(Player player) {
-        this.players.add(player);
-        player.getTournaments().add(this);
+        PlayerParticipation participation = new PlayerParticipation(this, player);
+        this.participations.add(participation);
+        player.getParticipations().add(participation);
     }
 
     public void addGame(Game game) {
@@ -71,10 +63,11 @@ public class Tournament implements Serializable {
         roundMatching.setTournament(this);
     }
 
-    public void removeUser(User user) {
-        this.players.remove(user);
-        user.getTournaments().remove(this);
-    }
+
+//    public void removeUser(User user) {
+//        this.players.remove(user);
+//        user.getTournaments().remove(this);
+//    }
 
 //    public void addGame(Game game) {
 //        this.allGames.add(game);

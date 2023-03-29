@@ -3,6 +3,7 @@ package com.magicapp.resource;
 import com.magicapp.domain.*;
 import com.magicapp.repository.TournamentRepository;
 import com.magicapp.repository.UserRepository;
+import com.magicapp.service.GuestService;
 import com.magicapp.service.TournamentService;
 import com.magicapp.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,13 +18,15 @@ import org.springframework.web.bind.annotation.*;
 public class TournamentResource {
 
     private UserService userService;
+    private GuestService guestService;
 
     private TournamentService tournamentService;
 
     @Autowired
-    public TournamentResource(TournamentService tournamentService, UserService userService) {
+    public TournamentResource(TournamentService tournamentService, UserService userService, GuestService guestService) {
         this.tournamentService = tournamentService;
         this.userService = userService;
+        this.guestService = guestService;
     }
 
     @PostMapping("/add")
@@ -47,11 +50,11 @@ public class TournamentResource {
         Tournament tournament = tournamentService.findByTournamentString(tournamentString);
         User user = userService.findUserByUserId(userId);
         tournament.addPlayer(user);
-        Guest guest = new Guest("ja", "ja", "asd", "ja");
+        Guest guest = guestService.addNewGuest("mati", "", "");
         tournament.addPlayer(guest);
         RoundMatching roundMatching = new RoundMatching(1);
         tournament.addRoundMatching(roundMatching);
-        roundMatching.addGame(new Game(1,user, (Player) tournament.getPlayers().toArray()[0]));
+        roundMatching.addGame(new Game(1,user, user));
 
 ////        Game game = new Game(2L, user, user);
 //        tournament.addGame(game);

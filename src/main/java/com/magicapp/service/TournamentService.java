@@ -34,6 +34,7 @@ public class TournamentService {
         }
         Tournament tournament = new Tournament();
         tournament.setOwner(user);
+        tournamentRepository.save(tournament); //idk why this works
         tournament.addPlayer(user);
         tournament.setTournamentString(generateTournamentString());
         tournamentRepository.save(tournament);

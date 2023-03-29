@@ -15,4 +15,5 @@ public class Guest extends Player{
     public Guest(String firstName, String lastName, String username, String profileImageUrl) {
         super(firstName,lastName, username, profileImageUrl);
     }
+
 }

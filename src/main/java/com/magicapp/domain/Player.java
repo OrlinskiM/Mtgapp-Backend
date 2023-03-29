@@ -24,9 +24,9 @@ public abstract class Player{
     private String username;
     private String profileImageUrl;
 
-    @ManyToMany(mappedBy = "players")
+    @OneToMany(mappedBy = "player", cascade = CascadeType.ALL)
     @JsonIgnore
-    private Set<Tournament> tournaments = new HashSet<>();
+    private Set<PlayerParticipation> participations = new HashSet<>();
 
     public Player(String firstName, String lastName, String username, String profileImageUrl) {
         this.firstName = firstName;
