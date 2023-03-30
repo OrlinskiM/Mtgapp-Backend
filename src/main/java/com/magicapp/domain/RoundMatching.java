@@ -27,7 +27,7 @@ public class RoundMatching {
     private Tournament tournament;
     private int round;
 
-    @OneToMany(mappedBy="roundMatching", cascade = CascadeType.ALL)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy="roundMatching", cascade = CascadeType.ALL)
     private Set<Game> games = new HashSet<>();
 
     public RoundMatching(int round) {

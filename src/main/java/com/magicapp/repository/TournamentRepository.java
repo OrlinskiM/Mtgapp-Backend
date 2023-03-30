@@ -1,5 +1,6 @@
 package com.magicapp.repository;
 
+import com.magicapp.domain.PlayerParticipation;
 import com.magicapp.domain.Tournament;
 import com.magicapp.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;

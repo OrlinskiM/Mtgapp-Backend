@@ -2,10 +2,7 @@ package com.magicapp.exception;
 
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.magicapp.domain.HttpResponse;
-import com.magicapp.exception.domain.EmailExistException;
-import com.magicapp.exception.domain.EmailNotFoundException;
-import com.magicapp.exception.domain.UserNotFoundException;
-import com.magicapp.exception.domain.UsernameExistException;
+import com.magicapp.exception.domain.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.servlet.error.ErrorController;
@@ -113,15 +110,22 @@ public class ExceptionHandling implements ErrorController {
         return createHttpResponse(INTERNAL_SERVER_ERROR, ERROR_PROCESSING_FILE);
     }
 
+    @ExceptionHandler(TournamentNotFoundException.class)
+    public ResponseEntity<HttpResponse> tournamentNotFoundException(TournamentNotFoundException exception) {
+        return createHttpResponse(BAD_REQUEST, exception.getMessage());
+    }
+    @RequestMapping(ERROR_PATH)
+    public ResponseEntity<HttpResponse> notFound404() {
+        return createHttpResponse(NOT_FOUND, "There is no mapping for this URL");
+    }
+
+
     private ResponseEntity<HttpResponse> createHttpResponse(HttpStatus httpStatus, String message) {
         return new ResponseEntity<>(new HttpResponse(httpStatus.value(), httpStatus,
                 httpStatus.getReasonPhrase().toUpperCase(), message), httpStatus);
     }
 
-    @RequestMapping(ERROR_PATH)
-    public ResponseEntity<HttpResponse> notFound404() {
-        return createHttpResponse(NOT_FOUND, "There is no mapping for this URL");
-    }
+
 
     @Override
     public String getErrorPath() {

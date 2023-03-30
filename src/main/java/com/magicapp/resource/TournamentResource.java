@@ -1,6 +1,7 @@
 package com.magicapp.resource;
 
 import com.magicapp.domain.*;
+import com.magicapp.exception.domain.TournamentNotFoundException;
 import com.magicapp.repository.TournamentRepository;
 import com.magicapp.repository.UserRepository;
 import com.magicapp.service.GuestService;
@@ -11,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 //@CrossOrigin(origins = "*")
@@ -31,22 +34,33 @@ public class TournamentResource {
 
     @PostMapping("/add")
     public ResponseEntity<Tournament> addNewTournament(){
-        String currentUserName = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userService.findUserByUsername(currentUserName);
+        User currentUser = getCurrentUser();
         Tournament tournament = tournamentService.addNewTournament(currentUser);
         return new ResponseEntity<>(tournament, HttpStatus.OK);
     }
 
+    @PostMapping("/{tournamentString}")
+    public ResponseEntity<Tournament> joinTournament(@PathVariable("tournamentString") String tournamentString) throws TournamentNotFoundException {
+        Tournament tournament = tournamentService.findByTournamentString(tournamentString);
+        User currentUser = getCurrentUser();
+        tournamentService.validateUserInTournament(tournament, currentUser);
+        return new ResponseEntity<>(tournament, HttpStatus.OK);
+    }
+
+
+
     @GetMapping("/{tournamentString}")
-    public ResponseEntity<Tournament> getTournament(@PathVariable("tournamentString") String tournamentString){
+    public ResponseEntity<Tournament> getTournament(@PathVariable("tournamentString") String tournamentString) throws TournamentNotFoundException {
         Tournament getTournament = tournamentService.findByTournamentString(tournamentString);
 
         return new ResponseEntity<>(getTournament, HttpStatus.OK);
     }
 
+
+
     @PostMapping("/{tournamentString}/update")
     public ResponseEntity<Tournament> updateTournament(@PathVariable("tournamentString") String tournamentString,
-                                                 @RequestParam("userId") Long userId){
+                                                 @RequestParam("userId") Long userId) throws TournamentNotFoundException {
         Tournament tournament = tournamentService.findByTournamentString(tournamentString);
         User user = userService.findUserByUserId(userId);
         tournament.addPlayer(user);
@@ -61,4 +75,10 @@ public class TournamentResource {
         tournamentService.saveTournament(tournament);
         return new ResponseEntity<>(tournament, HttpStatus.OK);
     }
+    private User getCurrentUser() {
+        String currentUserName = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userService.findUserByUsername(currentUserName);
+        return currentUser;
+    }
+
 }

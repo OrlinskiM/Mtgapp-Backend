@@ -1,7 +1,10 @@
 package com.magicapp.service;
 
+import com.magicapp.domain.Player;
+import com.magicapp.domain.PlayerParticipation;
 import com.magicapp.domain.Tournament;
 import com.magicapp.domain.User;
+import com.magicapp.exception.domain.TournamentNotFoundException;
 import com.magicapp.repository.TournamentRepository;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
@@ -10,7 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import static com.magicapp.constant.TournamentConstant.NO_TOURNAMENT_FOUND_BY_STRING;
 
 @Service
 @Transactional
@@ -29,9 +36,9 @@ public class TournamentService {
 //        if(tournamentRepository.existsByTournamentString(tournamentString)){
 //            throw new IllegalArgumentException("Tournament string exists");
 //        }
-        if(tournamentRepository.existsByOwner(user) && !tournamentRepository.findByOwner(user).isFinished()){
-            throw new IllegalArgumentException("You're already hosting a tournament!");
-        }
+//        if(tournamentRepository.existsByOwner(user) && !tournamentRepository.findByOwner(user).isFinished()){
+//            throw new IllegalArgumentException("You're already hosting a tournament!");
+//        }
         Tournament tournament = new Tournament();
         tournament.setOwner(user);
         tournamentRepository.save(tournament); //idk why this works
@@ -45,8 +52,30 @@ public class TournamentService {
         return tournamentRepository.save(tournament);
     }
 
-    public Tournament findByTournamentString(String tournamentString){
-        return tournamentRepository.findByTournamentString(tournamentString);
+    public Tournament findByTournamentString(String tournamentString) throws TournamentNotFoundException {
+        if(!tournamentRepository.existsByTournamentString(tournamentString)){
+            throw new TournamentNotFoundException(NO_TOURNAMENT_FOUND_BY_STRING + tournamentString);
+        }
+        Tournament tournament = tournamentRepository.findByTournamentString(tournamentString);
+        return tournament;
+    }
+
+    public boolean isPlayerParticipating(Tournament tournament, Player player){
+        Set<PlayerParticipation> participations = tournament.getParticipations();
+        for (PlayerParticipation participation: participations) {
+            if(participation.getPlayer().getUserId() == player.getUserId()){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Tournament validateUserInTournament (Tournament tournament, User user){
+        if(isPlayerParticipating(tournament, user)){
+            return tournament;
+        }
+        tournament.addPlayer(user);
+        return tournament;
     }
 
     private String generateTournamentString(){
