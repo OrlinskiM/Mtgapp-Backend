@@ -56,6 +56,19 @@ public class TournamentResource {
         return new ResponseEntity<>(getTournament, HttpStatus.OK);
     }
 
+    @PostMapping("/{tournamentString}/guest")
+    public ResponseEntity<Tournament> addGuestToTournament(@PathVariable("tournamentString") String tournamentString,
+                                                           @RequestParam(value = "firstName", required = false) String firstName,
+                                                           @RequestParam(value = "lastName", required = false) String lastName,
+                                                           @RequestParam(value = "username") String username) throws TournamentNotFoundException {
+        Tournament tournament = tournamentService.findByTournamentString(tournamentString);
+        User currentUser = getCurrentUser();
+        tournamentService.validateOwnerInTournament(tournament, currentUser);
+        Guest guest = guestService.addNewGuest(firstName,lastName,username);
+        tournamentService.addPlayerToTournament(tournament,guest);
+        return new ResponseEntity<>(tournament, HttpStatus.OK);
+    }
+
 
 
     @PostMapping("/{tournamentString}/update")

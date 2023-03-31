@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.magicapp.constant.TournamentConstant.NO_TOURNAMENT_FOUND_BY_STRING;
+import static com.magicapp.constant.TournamentConstant.USER_NOT_TOURNAMENT_OWNER;
 
 @Service
 @Transactional
@@ -61,7 +62,7 @@ public class TournamentService {
     }
 
     public boolean isPlayerParticipating(Tournament tournament, Player player){
-        Set<PlayerParticipation> participations = tournament.getParticipations();
+        List<PlayerParticipation> participations = tournament.getParticipations();
         for (PlayerParticipation participation: participations) {
             if(participation.getPlayer().getUserId() == player.getUserId()){
                 return true;
@@ -70,11 +71,24 @@ public class TournamentService {
         return false;
     }
 
+    public Tournament addPlayerToTournament(Tournament tournament, Player player){
+        tournament.addPlayer(player);
+        return tournamentRepository.save(tournament);
+    }
+
     public Tournament validateUserInTournament (Tournament tournament, User user){
         if(isPlayerParticipating(tournament, user)){
             return tournament;
         }
         tournament.addPlayer(user);
+        tournamentRepository.save(tournament);
+        return tournament;
+    }
+
+    public Tournament validateOwnerInTournament(Tournament tournament, User user){
+        if(tournament.getOwner().getUserId() != user.getUserId()){
+            throw new IllegalArgumentException(USER_NOT_TOURNAMENT_OWNER);
+        }
         return tournament;
     }
 

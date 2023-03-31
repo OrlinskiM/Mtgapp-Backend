@@ -112,6 +112,13 @@ public class ExceptionHandling implements ErrorController {
 
     @ExceptionHandler(TournamentNotFoundException.class)
     public ResponseEntity<HttpResponse> tournamentNotFoundException(TournamentNotFoundException exception) {
+        LOGGER.error(exception.getMessage());
+        return createHttpResponse(BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<HttpResponse> illegalArgumentException(IllegalArgumentException exception) {
+        LOGGER.error(exception.getMessage());
         return createHttpResponse(BAD_REQUEST, exception.getMessage());
     }
     @RequestMapping(ERROR_PATH)

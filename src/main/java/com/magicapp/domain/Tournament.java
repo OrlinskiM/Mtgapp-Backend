@@ -30,11 +30,11 @@ public class Tournament implements Serializable {
     @JoinColumn(name = "owner_user_id")
     private User owner;
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "tournament", cascade = CascadeType.ALL)
-    private Set<PlayerParticipation> participations = new HashSet<>();
+    private List<PlayerParticipation> participations = new ArrayList<>();
     @OneToMany(fetch = FetchType.LAZY, mappedBy="tournament", cascade = CascadeType.ALL)
-    private Set<Game> allGames = new HashSet<>();
+    private List<Game> allGames = new ArrayList<>();
     @OneToMany(fetch = FetchType.EAGER, mappedBy="tournament", cascade = CascadeType.ALL)
-    private Set<RoundMatching> roundMatchings = new HashSet<>();
+    private List<RoundMatching> roundMatchings = new ArrayList<>();
 
 
 

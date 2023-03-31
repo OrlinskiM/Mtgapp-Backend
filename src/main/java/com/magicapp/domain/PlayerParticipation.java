@@ -29,8 +29,10 @@ public class PlayerParticipation {
     @JoinColumn(name = "user_id")
     private Player player;
 
+    private int score;
     private int roundsWon;
     private int gamesWon;
+    private int byeRound;
 
     public PlayerParticipation(Tournament tournament, Player player) {
         this.tournament = tournament;

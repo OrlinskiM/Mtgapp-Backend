@@ -8,7 +8,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -28,7 +30,7 @@ public class RoundMatching {
     private int round;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy="roundMatching", cascade = CascadeType.ALL)
-    private Set<Game> games = new HashSet<>();
+    private List<Game> games = new ArrayList<>();
 
     public RoundMatching(int round) {
         this.round = round;

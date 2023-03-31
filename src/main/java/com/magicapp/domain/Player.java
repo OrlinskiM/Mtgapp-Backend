@@ -6,7 +6,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -26,7 +28,7 @@ public abstract class Player{
 
     @OneToMany(mappedBy = "player", cascade = CascadeType.ALL)
     @JsonIgnore
-    private Set<PlayerParticipation> participations = new HashSet<>();
+    private List<PlayerParticipation> participations = new ArrayList<>();
 
     public Player(String firstName, String lastName, String username, String profileImageUrl) {
         this.firstName = firstName;

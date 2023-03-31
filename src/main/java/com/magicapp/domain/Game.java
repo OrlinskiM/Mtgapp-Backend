@@ -2,6 +2,7 @@ package com.magicapp.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.magicapp.enumeration.GameResult;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -31,16 +32,8 @@ public class Game {
     private int round;
     private int scorePlayer1;
     private int scorePlayer2;
-//    @ManyToMany(
-//            cascade = {CascadeType.MERGE, CascadeType.PERSIST}
-//    )
-//    @JoinTable(
-//            name = "user_game",
-//            joinColumns = @JoinColumn(name = "gameId"),
-//            inverseJoinColumns = @JoinColumn(name = "userId")
-//    )
-//    private Set<User> users = new HashSet<>();
-
+    @Enumerated(EnumType.STRING)
+    private GameResult gameResult;
     @ManyToOne
     @JoinColumn(name = "player_1_id")
     private Player player1;
