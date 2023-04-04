@@ -13,9 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static com.magicapp.constant.TournamentConstant.NO_TOURNAMENT_FOUND_BY_STRING;
 import static com.magicapp.constant.TournamentConstant.USER_NOT_TOURNAMENT_OWNER;
@@ -42,11 +40,17 @@ public class TournamentService {
 //        }
         Tournament tournament = new Tournament();
         tournament.setOwner(user);
+        tournament.setCurrentRound(0);
         tournamentRepository.save(tournament); //idk why this works
-        tournament.addPlayer(user);
+        tournament.createParticipationForPlayer(user);
         tournament.setTournamentString(generateTournamentString());
         tournamentRepository.save(tournament);
         return tournament;
+    }
+
+    public Tournament startTournament(Tournament tournament){
+        tournament.pairNextRound();
+        return tournamentRepository.save(tournament);
     }
 
     public Tournament saveTournament(Tournament tournament){
@@ -72,7 +76,7 @@ public class TournamentService {
     }
 
     public Tournament addPlayerToTournament(Tournament tournament, Player player){
-        tournament.addPlayer(player);
+        tournament.createParticipationForPlayer(player);
         return tournamentRepository.save(tournament);
     }
 
@@ -80,7 +84,7 @@ public class TournamentService {
         if(isPlayerParticipating(tournament, user)){
             return tournament;
         }
-        tournament.addPlayer(user);
+        tournament.createParticipationForPlayer(user);
         tournamentRepository.save(tournament);
         return tournament;
     }

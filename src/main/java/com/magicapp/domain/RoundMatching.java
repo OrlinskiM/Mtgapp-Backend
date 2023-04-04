@@ -37,9 +37,48 @@ public class RoundMatching {
     }
 
     public void addGame(Game game) {
+        for (Game existingGame : games) {
+            if (existingGame.getPlayer1().equals(game.getPlayer1())) {
+                throw new IllegalArgumentException("Could not add match " + game.getPlayer1().getPlayer().getUsername() + " - " + game.getPlayer2().getPlayer().getUsername() + " : player 1 already matches");
+            }
+            if (existingGame.getPlayer1().equals(game.getPlayer2())) {
+                throw new IllegalArgumentException("Could not add match " + game.getPlayer1().getPlayer().getUsername() + " - " + game.getPlayer2().getPlayer().getUsername() + " : player 2 already matches");
+            }
+        }
         this.games.add(game);
         game.setRoundMatching(this);
         game.setTournament(tournament);
     }
 
+    boolean hasGameForPlayerParticipation(PlayerParticipation player) {
+        for (Game game : games) {
+            if (game.hasPlayerParticipation(player)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    boolean removeGameWithPlayerParticipation(PlayerParticipation player) {
+        Game foundGame = null;
+        for (Game game : games) {
+            if (game.hasPlayerParticipation(player)) {
+                foundGame = game;
+                break;
+            }
+        }
+        if (foundGame != null) {
+            return games.remove(foundGame);
+        }
+        return false;
+    }
+
+    public boolean hasAllResults() {
+        for (Game game : games) {
+            if (!game.hasResult()) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

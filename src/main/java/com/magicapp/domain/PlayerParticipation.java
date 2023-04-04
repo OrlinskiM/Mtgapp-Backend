@@ -13,7 +13,7 @@ import javax.persistence.*;
 @Getter
 @Setter
 @NoArgsConstructor
-public class PlayerParticipation {
+public class PlayerParticipation implements Comparable<PlayerParticipation>{
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)
@@ -37,5 +37,32 @@ public class PlayerParticipation {
     public PlayerParticipation(Tournament tournament, Player player) {
         this.tournament = tournament;
         this.player = player;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == null) {
+            return false;
+        }
+        if (!(other instanceof PlayerParticipation)) {
+            return false;
+        }
+        PlayerParticipation otherPlayer = (PlayerParticipation) other;
+        return otherPlayer.id.equals(id);
+    }
+    @Override
+    public int compareTo(PlayerParticipation other) {
+        if (score > other.score) {
+            return 1;
+        }
+        if (score < other.score) {
+            return -1;
+        }
+        return 0;
+    }
+
+    @Override
+    public String toString(){
+        return player.getUsername();
     }
 }

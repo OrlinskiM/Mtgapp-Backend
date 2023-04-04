@@ -2,8 +2,6 @@ package com.magicapp.resource;
 
 import com.magicapp.domain.*;
 import com.magicapp.exception.domain.TournamentNotFoundException;
-import com.magicapp.repository.TournamentRepository;
-import com.magicapp.repository.UserRepository;
 import com.magicapp.service.GuestService;
 import com.magicapp.service.TournamentService;
 import com.magicapp.service.UserService;
@@ -12,8 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 //@CrossOrigin(origins = "*")
@@ -69,6 +65,15 @@ public class TournamentResource {
         return new ResponseEntity<>(tournament, HttpStatus.OK);
     }
 
+    @PostMapping("/{tournamentString}/start")
+    public ResponseEntity<Tournament> startTournament(@PathVariable("tournamentString") String tournamentString) throws TournamentNotFoundException {
+        Tournament tournament = tournamentService.findByTournamentString(tournamentString);
+        User currentUser = getCurrentUser();
+        tournamentService.validateOwnerInTournament(tournament, currentUser);
+        tournamentService.startTournament(tournament);
+        return new ResponseEntity<>(tournament, HttpStatus.OK);
+    }
+
 
 
     @PostMapping("/{tournamentString}/update")
@@ -76,12 +81,12 @@ public class TournamentResource {
                                                  @RequestParam("userId") Long userId) throws TournamentNotFoundException {
         Tournament tournament = tournamentService.findByTournamentString(tournamentString);
         User user = userService.findUserByUserId(userId);
-        tournament.addPlayer(user);
+        PlayerParticipation participation = tournament.createParticipationForPlayer(user);
         Guest guest = guestService.addNewGuest("mati", "", "");
-        tournament.addPlayer(guest);
+        tournament.createParticipationForPlayer(guest);
         RoundMatching roundMatching = new RoundMatching(1);
         tournament.addRoundMatching(roundMatching);
-        roundMatching.addGame(new Game(1,user, user));
+        roundMatching.addGame(new Game(1,participation, participation));
 
 ////        Game game = new Game(2L, user, user);
 //        tournament.addGame(game);
