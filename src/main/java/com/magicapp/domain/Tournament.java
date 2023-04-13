@@ -35,7 +35,7 @@ public class Tournament implements Serializable {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "tournament", cascade = CascadeType.ALL)
     private List<PlayerParticipation> participations = new ArrayList<>();
     @OneToMany(fetch = FetchType.LAZY, mappedBy="tournament", cascade = CascadeType.ALL)
-    private List<Game> allGames = new ArrayList<>();
+    private List<Match> allMatches = new ArrayList<>();
     @OneToMany(fetch = FetchType.EAGER, mappedBy="tournament", cascade = CascadeType.ALL)
     private List<RoundMatching> roundMatchings = new ArrayList<>();
 
@@ -57,9 +57,9 @@ public class Tournament implements Serializable {
         return participation;
     }
 
-    public void addGame(Game game) {
-        this.allGames.add(game);
-        game.setTournament(this);
+    public void addMatch(Match match) {
+        this.allMatches.add(match);
+        match.setTournament(this);
     }
 
     public void addRoundMatching(RoundMatching roundMatching) {
@@ -135,7 +135,7 @@ public class Tournament implements Serializable {
             }
 
             // check if this player is already scheduled this round
-            if (newMatching.hasGameForPlayerParticipation(bestScorePlayer)) {
+            if (newMatching.hasMatchForPlayerParticipation(bestScorePlayer)) {
                 LOGGER.info("round " + currentRound + " player " + bestScorePlayer + " already scheduled");
                 continue;
             }
@@ -152,21 +152,21 @@ public class Tournament implements Serializable {
                 }
 
                 // check if this player is already scheduled this round
-                if (newMatching.hasGameForPlayerParticipation(nextScorePlayer)) {
+                if (newMatching.hasMatchForPlayerParticipation(nextScorePlayer)) {
                     LOGGER.info("round " + currentRound + " player " + nextScorePlayer + " already scheduled");
                     continue;
                 }
 
-                // check if such game already happened
-                if (listContainsMatchBetweenPlayers(allGames, bestScorePlayer, nextScorePlayer)) {
+                // check if such match already happened
+                if (listContainsMatchBetweenPlayers(allMatches, bestScorePlayer, nextScorePlayer)) {
                     // already played. find next opponent
-                    LOGGER.info("round " + currentRound + " game " + bestScorePlayer + " - " + nextScorePlayer + " exists");
+                    LOGGER.info("round " + currentRound + " match " + bestScorePlayer + " - " + nextScorePlayer + " exists");
                     continue;
                 }
 
-                Game game = new Game(currentRound, bestScorePlayer, nextScorePlayer);
-                allGames.add(game);
-                newMatching.addGame(game);
+                Match match = new Match(currentRound, bestScorePlayer, nextScorePlayer);
+                allMatches.add(match);
+                newMatching.addMatch(match);
                 matchForBestPlayerFound = true;
                 break;
             }
@@ -176,7 +176,7 @@ public class Tournament implements Serializable {
                 continue;
             }
 
-            if (newMatching.getGames().size() == (numberOfPlayers / 2)) {
+            if (newMatching.getMatches().size() == (numberOfPlayers / 2)) {
                 // we have all games that we need
                 continue;
             }
@@ -184,16 +184,16 @@ public class Tournament implements Serializable {
             // no match for the best player found. we now have to find a couple to break,
             // and opp for this player that will satisfy all conditions
             // so iterate on the pairing so far in reverse order
-            LOGGER.info("round " + currentRound + " need to switch pairs for " + bestScorePlayer + " we have " + newMatching.getGames().size() + " games");
+            LOGGER.info("round " + currentRound + " need to switch pairs for " + bestScorePlayer + " we have " + newMatching.getMatches().size() + " games");
 
-            for (int g = newMatching.getGames().size() - 1; g >= 0; g--) {
-                Game pairedGame = newMatching.getGames().get(g);
+            for (int g = newMatching.getMatches().size() - 1; g >= 0; g--) {
+                Match pairedMatch = newMatching.getMatches().get(g);
                 // see if the best player can be matched vs any of this couple
-                PlayerParticipation player1 = pairedGame.getPlayer1();
-                PlayerParticipation player2 = pairedGame.getPlayer2();
+                PlayerParticipation player1 = pairedMatch.getPlayer1();
+                PlayerParticipation player2 = pairedMatch.getPlayer2();
 
-                if ((listContainsMatchBetweenPlayers(allGames, bestScorePlayer, player1)) &&
-                        (listContainsMatchBetweenPlayers(allGames, bestScorePlayer, player2))) {
+                if ((listContainsMatchBetweenPlayers(allMatches, bestScorePlayer, player1)) &&
+                        (listContainsMatchBetweenPlayers(allMatches, bestScorePlayer, player2))) {
                     // we can't use this pair because the best score user already played vs both of them
                     continue;
                 }
@@ -209,7 +209,7 @@ public class Tournament implements Serializable {
 
                     // check that the switch player is not scheduled, and that it is not the bye user, or the best
                     // score user, or the chosen pairs wid,bid
-                    if (newMatching.hasGameForPlayerParticipation(switchPlayer)) {
+                    if (newMatching.hasMatchForPlayerParticipation(switchPlayer)) {
                         LOGGER.info("round " + currentRound + " switch user " + switchPlayer + " already scheduled");
                         continue;
                     }
@@ -224,43 +224,43 @@ public class Tournament implements Serializable {
 
                     // ok ! the last thing to check it that it is possible to make some pairing switch
 
-                    if (!((listContainsMatchBetweenPlayers(allGames, player1, switchPlayer)) ||
-                            (listContainsMatchBetweenPlayers(allGames, player2, bestScorePlayer)))) {
+                    if (!((listContainsMatchBetweenPlayers(allMatches, player1, switchPlayer)) ||
+                            (listContainsMatchBetweenPlayers(allMatches, player2, bestScorePlayer)))) {
                         // we can switch. wid vs the switch user, best player vs bid
-                        LOGGER.info("pairing remove game " + pairedGame);
+                        LOGGER.info("pairing remove match " + pairedMatch);
 
-                        if (!newMatching.removeGameWithPlayerParticipation(player1)) {
-                            LOGGER.error("could not remove game with " + player1);
+                        if (!newMatching.removeMatchWithPlayerParticipation(player1)) {
+                            LOGGER.error("could not remove match with " + player1);
                             return null;
                         }
 
-                        Game game = new Game(currentRound, player1, switchPlayer);
-                        allGames.add(game);
-                        newMatching.addGame(game);
-                        Game game2 = new Game(currentRound, player2, bestScorePlayer);
-                        allGames.add(game2);
-                        newMatching.addGame(game2);
+                        Match match = new Match(currentRound, player1, switchPlayer);
+                        allMatches.add(match);
+                        newMatching.addMatch(match);
+                        Match match2 = new Match(currentRound, player2, bestScorePlayer);
+                        allMatches.add(match2);
+                        newMatching.addMatch(match2);
 
                         matchForBestPlayerFound = true;
                         break;
                     }
 
-                    if (!((listContainsMatchBetweenPlayers(allGames, player2, switchPlayer)) ||
-                            (listContainsMatchBetweenPlayers(allGames, player1, bestScorePlayer)))) {
+                    if (!((listContainsMatchBetweenPlayers(allMatches, player2, switchPlayer)) ||
+                            (listContainsMatchBetweenPlayers(allMatches, player1, bestScorePlayer)))) {
                         // we can switch. wid vs the switch user, best player vs bid
-                        LOGGER.info("pairing remove game " + pairedGame);
+                        LOGGER.info("pairing remove match " + pairedMatch);
 
-                        if (!newMatching.removeGameWithPlayerParticipation(player1)) {
+                        if (!newMatching.removeMatchWithPlayerParticipation(player1)) {
                             LOGGER.error("could not remove match with " + player1);
                             return null;
                         }
 
-                        Game game = new Game(currentRound, player2, switchPlayer);
-                        allGames.add(game);
-                        newMatching.addGame(game);
-                        Game game2 = new Game(currentRound, player1, bestScorePlayer);
-                        allGames.add(game2);
-                        newMatching.addGame(game2);
+                        Match match = new Match(currentRound, player2, switchPlayer);
+                        allMatches.add(match);
+                        newMatching.addMatch(match);
+                        Match match2 = new Match(currentRound, player1, bestScorePlayer);
+                        allMatches.add(match2);
+                        newMatching.addMatch(match2);
 
                         matchForBestPlayerFound = true;
                         break;
@@ -282,9 +282,9 @@ public class Tournament implements Serializable {
         return newMatching;
     }
 
-    private static boolean listContainsMatchBetweenPlayers(List<Game> games, PlayerParticipation player1, PlayerParticipation player2) {
-        for (Game game : games) {
-            if (game.hasPlayerParticipations(player1, player2)) {
+    private static boolean listContainsMatchBetweenPlayers(List<Match> matches, PlayerParticipation player1, PlayerParticipation player2) {
+        for (Match match : matches) {
+            if (match.hasPlayerParticipations(player1, player2)) {
                 return true;
             }
         }
@@ -304,9 +304,9 @@ public class Tournament implements Serializable {
             int player2Index = random.nextInt(notPairedYet.size());
             PlayerParticipation player2 = notPairedYet.get(player2Index);
             notPairedYet.remove(player2Index);
-            Game game = new Game(currentRound, player1, player2);
-            allGames.add(game);
-            matching.addGame(game);
+            Match match = new Match(currentRound, player1, player2);
+            allMatches.add(match);
+            matching.addMatch(match);
         }
         // set bye round for player without a pair
         if(notPairedYet.size() == 1){

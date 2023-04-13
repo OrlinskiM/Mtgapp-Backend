@@ -1,25 +1,25 @@
 package com.magicapp.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.magicapp.enumeration.GameResult;
+import com.magicapp.enumeration.MatchResult;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
 
-import static com.magicapp.enumeration.GameResult.*;
+import static com.magicapp.enumeration.MatchResult.*;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "game")
-public class Game {
+@Table(name = "\"match\"")
+public class Match {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(nullable = false, updatable = false)
-    private Long gameId;
+    private Long matchId;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "tournamentId")
     @JsonIgnore
@@ -32,7 +32,7 @@ public class Game {
     private int gamesWonPlayer1;
     private int gamesWonPlayer2;
     @Enumerated(EnumType.STRING)
-    private GameResult gameResult;
+    private MatchResult matchResult;
     @ManyToOne
     @JoinColumn(name = "player_1_id")
     private PlayerParticipation player1;
@@ -41,23 +41,23 @@ public class Game {
     private PlayerParticipation player2;
 
 
-//    public Game(Long gameId, Set<User> users) {
+//    public Match(Long gameId, Set<User> users) {
 //        this.gameId = gameId;
 //        this.users = users;
 //    }
 
 
-    public Game(int round, PlayerParticipation player1, PlayerParticipation player2) {
+    public Match(int round, PlayerParticipation player1, PlayerParticipation player2) {
         this.round = round;
         this.gamesWonPlayer1 = 0;
         this.gamesWonPlayer2 = 0;
         this.player1 = player1;
         this.player2 = player2;
-        this.gameResult = NO_RESULT;
+        this.matchResult = NO_RESULT;
     }
 
     public boolean hasResult() {
-        return gameResult != NO_RESULT;
+        return matchResult != NO_RESULT;
     }
 
     public boolean hasPlayerParticipation(PlayerParticipation player) {
@@ -71,13 +71,13 @@ public class Game {
 
     public void calculateResult(){
         if(gamesWonPlayer1 > gamesWonPlayer2){
-            this.setGameResult(PLAYER_1_WON);
+            this.setMatchResult(PLAYER_1_WON);
         }
         if(gamesWonPlayer1 < gamesWonPlayer2){
-            this.setGameResult(PLAYER_2_WON);
+            this.setMatchResult(PLAYER_2_WON);
         }
         if(gamesWonPlayer1 == gamesWonPlayer2){
-            this.setGameResult(DRAW);
+            this.setMatchResult(DRAW);
         }
     }
 
@@ -86,12 +86,12 @@ public class Game {
         if (other == null) {
             return false;
         }
-        if (!(other instanceof Game)) {
+        if (!(other instanceof Match)) {
             return false;
         }
-        Game otherGame = (Game) other;
-        return ((otherGame.round == round) &&
-                (otherGame.player1.equals(player1)) &&
-                (otherGame.player2.equals(player2)));
+        Match otherMatch = (Match) other;
+        return ((otherMatch.round == round) &&
+                (otherMatch.player1.equals(player1)) &&
+                (otherMatch.player2.equals(player2)));
     }
 }

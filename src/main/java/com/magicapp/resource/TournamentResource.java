@@ -75,15 +75,15 @@ public class TournamentResource {
         return new ResponseEntity<>(tournament, HttpStatus.OK);
     }
 
-    @PostMapping("/{tournamentString}/gameResults")
-    public ResponseEntity<Tournament> addGameResults(@PathVariable("tournamentString") String tournamentString,
+    @PostMapping("/{tournamentString}/matchResults")
+    public ResponseEntity<Tournament> addMatchResults(@PathVariable("tournamentString") String tournamentString,
                                                      @RequestParam("gamesWonPlayer1") int gamesWonPlayer1,
                                                      @RequestParam("gamesWonPlayer2") int gamesWonPlayer2,
-                                                     @RequestParam("gameId") int gameId) throws TournamentNotFoundException {
+                                                     @RequestParam("matchId") int matchId) throws TournamentNotFoundException {
         Tournament tournament = tournamentService.findByTournamentString(tournamentString);
         User currentUser = getCurrentUser();
         tournamentService.validateOwnerInTournament(tournament, currentUser);
-        tournamentService.addGameResults(tournament, gameId, gamesWonPlayer1, gamesWonPlayer2);
+        tournamentService.addMatchResults(tournament, matchId, gamesWonPlayer1, gamesWonPlayer2);
         return new ResponseEntity<>(tournament, HttpStatus.OK);
     }
 
@@ -99,9 +99,9 @@ public class TournamentResource {
         tournament.createParticipationForPlayer(guest);
         RoundMatching roundMatching = new RoundMatching(1);
         tournament.addRoundMatching(roundMatching);
-        roundMatching.addGame(new Game(1,participation, participation));
+        roundMatching.addMatch(new Match(1,participation, participation));
 
-////        Game game = new Game(2L, user, user);
+////        Match game = new Match(2L, user, user);
 //        tournament.addGame(game);
         tournamentService.saveTournament(tournament);
         return new ResponseEntity<>(tournament, HttpStatus.OK);

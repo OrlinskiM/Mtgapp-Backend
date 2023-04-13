@@ -84,16 +84,16 @@ public class TournamentService {
         return tournamentRepository.save(tournament);
     }
 
-    public Tournament addGameResults(Tournament tournament, int gameId, int scorePlayer1, int scorePlayer2){
-        List<Game> allGames = tournament.getAllGames();
-        for (Game oldGame: allGames) {
-            if(oldGame.getGameId() == gameId){
-                oldGame.setGamesWonPlayer1(scorePlayer1);
-                oldGame.setGamesWonPlayer2(scorePlayer2);
-                oldGame.calculateResult();
+    public Tournament addMatchResults(Tournament tournament, int matchId, int scorePlayer1, int scorePlayer2){
+        List<Match> allMatches = tournament.getAllMatches();
+        for (Match oldMatch : allMatches) {
+            if(oldMatch.getMatchId() == matchId){
+                oldMatch.setGamesWonPlayer1(scorePlayer1);
+                oldMatch.setGamesWonPlayer2(scorePlayer2);
+                oldMatch.calculateResult();
             }
         }
-        tournament.setAllGames(allGames);
+        tournament.setAllMatches(allMatches);
         return tournamentRepository.save(tournament);
     }
 

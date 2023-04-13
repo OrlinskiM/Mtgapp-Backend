@@ -1,17 +1,13 @@
 package com.magicapp.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.sun.org.apache.xerces.internal.impl.xpath.regex.Match;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Entity
 @Getter
@@ -30,52 +26,52 @@ public class RoundMatching {
     private int round;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy="roundMatching", cascade = CascadeType.ALL)
-    private List<Game> games = new ArrayList<>();
+    private List<Match> matches = new ArrayList<>();
 
     public RoundMatching(int round) {
         this.round = round;
     }
 
-    public void addGame(Game game) {
-        for (Game existingGame : games) {
-            if (existingGame.getPlayer1().equals(game.getPlayer1())) {
-                throw new IllegalArgumentException("Could not add match " + game.getPlayer1().getPlayer().getUsername() + " - " + game.getPlayer2().getPlayer().getUsername() + " : player 1 already matches");
+    public void addMatch(Match match) {
+        for (Match existingMatch : matches) {
+            if (existingMatch.getPlayer1().equals(match.getPlayer1())) {
+                throw new IllegalArgumentException("Could not add match " + match.getPlayer1().getPlayer().getUsername() + " - " + match.getPlayer2().getPlayer().getUsername() + " : player 1 already matches");
             }
-            if (existingGame.getPlayer1().equals(game.getPlayer2())) {
-                throw new IllegalArgumentException("Could not add match " + game.getPlayer1().getPlayer().getUsername() + " - " + game.getPlayer2().getPlayer().getUsername() + " : player 2 already matches");
+            if (existingMatch.getPlayer1().equals(match.getPlayer2())) {
+                throw new IllegalArgumentException("Could not add match " + match.getPlayer1().getPlayer().getUsername() + " - " + match.getPlayer2().getPlayer().getUsername() + " : player 2 already matches");
             }
         }
-        this.games.add(game);
-        game.setRoundMatching(this);
-        game.setTournament(tournament);
+        this.matches.add(match);
+        match.setRoundMatching(this);
+        match.setTournament(tournament);
     }
 
-    boolean hasGameForPlayerParticipation(PlayerParticipation player) {
-        for (Game game : games) {
-            if (game.hasPlayerParticipation(player)) {
+    boolean hasMatchForPlayerParticipation(PlayerParticipation player) {
+        for (Match match : matches) {
+            if (match.hasPlayerParticipation(player)) {
                 return true;
             }
         }
         return false;
     }
 
-    boolean removeGameWithPlayerParticipation(PlayerParticipation player) {
-        Game foundGame = null;
-        for (Game game : games) {
-            if (game.hasPlayerParticipation(player)) {
-                foundGame = game;
+    boolean removeMatchWithPlayerParticipation(PlayerParticipation player) {
+        Match foundMatch = null;
+        for (Match match : matches) {
+            if (match.hasPlayerParticipation(player)) {
+                foundMatch = match;
                 break;
             }
         }
-        if (foundGame != null) {
-            return games.remove(foundGame);
+        if (foundMatch != null) {
+            return matches.remove(foundMatch);
         }
         return false;
     }
 
     public boolean hasAllResults() {
-        for (Game game : games) {
-            if (!game.hasResult()) {
+        for (Match match : matches) {
+            if (!match.hasResult()) {
                 return false;
             }
         }
