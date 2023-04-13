@@ -99,7 +99,8 @@ public class UserResource extends ExceptionHandling {
 
     }
 
-    @PreAuthorize("#username == authentication.name")
+    @PreAuthorize("#username == authentication.name or hasAnyAuthority('user:update')")
+//    @PreAuthorize("hasAnyAuthority('user:update')")
     @PostMapping("/update")
     public ResponseEntity<User> updateNewUser(@RequestParam("firstName") String firstName,
                                           @RequestParam("currentUsername") String currentUsername,

@@ -4,12 +4,13 @@ import com.fasterxml.jackson.annotation.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.*;
 
-import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
 
 @Entity
 @Getter
@@ -69,9 +70,17 @@ public class Tournament implements Serializable {
 
     public synchronized RoundMatching pairNextRound() {
         currentRound++;
-        if (currentRound > rounds) {
+
+        if (isFinished) {
             throw new IllegalArgumentException("Tournament ended after " + rounds + " rounds");
         }
+
+        if (currentRound == rounds+1) {
+            this.finishDate = new Date();
+            this.isFinished = true;
+            throw new IllegalArgumentException("calculate results");
+        }
+
         if (currentRound == 1) {
             return firstRoundRandomMatching();
         }
@@ -89,6 +98,7 @@ public class Tournament implements Serializable {
     }
 
     private RoundMatching getNextRoundMatching() {
+        Logger LOGGER = LoggerFactory.getLogger(getClass());
         // sort the players based on their score
         List<PlayerParticipation> sortedPlayers = new ArrayList<PlayerParticipation>(participations);
         Collections.sort(sortedPlayers);
@@ -105,7 +115,7 @@ public class Tournament implements Serializable {
                 if (player.getByeRound() == 0) {
                     player.setByeRound(currentRound);
                     byePlayerId = player.getId(); // -------------------------------------------------------id?
-                    LOGGER.fine("player " + player + " bye round " + currentRound);
+                    LOGGER.info("player " + player + " bye round " + currentRound);
                     break;
                 }
                 index++;
@@ -120,13 +130,13 @@ public class Tournament implements Serializable {
             bestScorePlayer = sortedPlayers.get(i);
 
             if (bestScorePlayer.getId() == byePlayerId) {
-                LOGGER.fine("player " + bestScorePlayer + " bye this round");
+                LOGGER.info("player " + bestScorePlayer + " bye this round");
                 continue;
             }
 
             // check if this player is already scheduled this round
             if (newMatching.hasGameForPlayerParticipation(bestScorePlayer)) {
-                LOGGER.fine("round " + currentRound + " player " + bestScorePlayer + " already scheduled");
+                LOGGER.info("round " + currentRound + " player " + bestScorePlayer + " already scheduled");
                 continue;
             }
 
@@ -137,20 +147,20 @@ public class Tournament implements Serializable {
                 nextScorePlayer = participations.get(j);
 
                 if (nextScorePlayer.getId() == byePlayerId) {
-                    LOGGER.fine(nextScorePlayer + " bye this round");
+                    LOGGER.info(nextScorePlayer + " bye this round");
                     continue;
                 }
 
                 // check if this player is already scheduled this round
                 if (newMatching.hasGameForPlayerParticipation(nextScorePlayer)) {
-                    LOGGER.fine("round " + currentRound + " player " + nextScorePlayer + " already scheduled");
+                    LOGGER.info("round " + currentRound + " player " + nextScorePlayer + " already scheduled");
                     continue;
                 }
 
                 // check if such game already happened
                 if (listContainsMatchBetweenPlayers(allGames, bestScorePlayer, nextScorePlayer)) {
                     // already played. find next opponent
-                    LOGGER.fine("round " + currentRound + " game " + bestScorePlayer + " - " + nextScorePlayer + " exists");
+                    LOGGER.info("round " + currentRound + " game " + bestScorePlayer + " - " + nextScorePlayer + " exists");
                     continue;
                 }
 
@@ -174,7 +184,7 @@ public class Tournament implements Serializable {
             // no match for the best player found. we now have to find a couple to break,
             // and opp for this player that will satisfy all conditions
             // so iterate on the pairing so far in reverse order
-            LOGGER.fine("round " + currentRound + " need to switch pairs for " + bestScorePlayer + " we have " + newMatching.getGames().size() + " games");
+            LOGGER.info("round " + currentRound + " need to switch pairs for " + bestScorePlayer + " we have " + newMatching.getGames().size() + " games");
 
             for (int g = newMatching.getGames().size() - 1; g >= 0; g--) {
                 Game pairedGame = newMatching.getGames().get(g);
@@ -200,27 +210,27 @@ public class Tournament implements Serializable {
                     // check that the switch player is not scheduled, and that it is not the bye user, or the best
                     // score user, or the chosen pairs wid,bid
                     if (newMatching.hasGameForPlayerParticipation(switchPlayer)) {
-                        LOGGER.fine("round " + currentRound + " switch user " + switchPlayer + " already scheduled");
+                        LOGGER.info("round " + currentRound + " switch user " + switchPlayer + " already scheduled");
                         continue;
                     }
 
                     if ((switchPlayer.equals(bestScorePlayer)) || (switchPlayer.getId() == byePlayerId) ||
                             (switchPlayer.equals(player1)) || (switchPlayer.equals(player2))) {
-                        LOGGER.fine("round " + currentRound + " switch user " + switchPlayer + " is either the best score, bye, wid or bid");
+                        LOGGER.info("round " + currentRound + " switch user " + switchPlayer + " is either the best score, bye, wid or bid");
                         continue;
                     }
 
-                    LOGGER.fine("round " + currentRound + " candidate switch player " + switchPlayer);
+                    LOGGER.info("round " + currentRound + " candidate switch player " + switchPlayer);
 
                     // ok ! the last thing to check it that it is possible to make some pairing switch
 
                     if (!((listContainsMatchBetweenPlayers(allGames, player1, switchPlayer)) ||
                             (listContainsMatchBetweenPlayers(allGames, player2, bestScorePlayer)))) {
                         // we can switch. wid vs the switch user, best player vs bid
-                        LOGGER.fine("pairing remove game " + pairedGame);
+                        LOGGER.info("pairing remove game " + pairedGame);
 
                         if (!newMatching.removeGameWithPlayerParticipation(player1)) {
-                            LOGGER.warning("could not remove game with " + player1);
+                            LOGGER.error("could not remove game with " + player1);
                             return null;
                         }
 
@@ -238,10 +248,10 @@ public class Tournament implements Serializable {
                     if (!((listContainsMatchBetweenPlayers(allGames, player2, switchPlayer)) ||
                             (listContainsMatchBetweenPlayers(allGames, player1, bestScorePlayer)))) {
                         // we can switch. wid vs the switch user, best player vs bid
-                        LOGGER.fine("pairing remove game " + pairedGame);
+                        LOGGER.info("pairing remove game " + pairedGame);
 
                         if (!newMatching.removeGameWithPlayerParticipation(player1)) {
-                            LOGGER.warning("could not remove match with " + player1);
+                            LOGGER.error("could not remove match with " + player1);
                             return null;
                         }
 
@@ -264,7 +274,7 @@ public class Tournament implements Serializable {
 
             if (!matchForBestPlayerFound) {
                 // nothing to do... probably not enough players or some crazy pairing
-                LOGGER.warning("could not match all players. not enough players ?");
+                LOGGER.error("could not match all players. not enough players ?");
                 break;
             }
         }

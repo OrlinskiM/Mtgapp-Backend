@@ -1,9 +1,6 @@
 package com.magicapp.service;
 
-import com.magicapp.domain.Player;
-import com.magicapp.domain.PlayerParticipation;
-import com.magicapp.domain.Tournament;
-import com.magicapp.domain.User;
+import com.magicapp.domain.*;
 import com.magicapp.exception.domain.TournamentNotFoundException;
 import com.magicapp.repository.TournamentRepository;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -13,10 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.util.Date;
 import java.util.List;
 
-import static com.magicapp.constant.TournamentConstant.NO_TOURNAMENT_FOUND_BY_STRING;
-import static com.magicapp.constant.TournamentConstant.USER_NOT_TOURNAMENT_OWNER;
+import static com.magicapp.constant.TournamentConstant.*;
 
 @Service
 @Transactional
@@ -41,6 +38,7 @@ public class TournamentService {
         Tournament tournament = new Tournament();
         tournament.setOwner(user);
         tournament.setCurrentRound(0);
+        tournament.setCreationDate(new Date());
         tournamentRepository.save(tournament); //idk why this works
         tournament.createParticipationForPlayer(user);
         tournament.setTournamentString(generateTournamentString());
@@ -48,7 +46,13 @@ public class TournamentService {
         return tournament;
     }
 
-    public Tournament startTournament(Tournament tournament){
+    public Tournament startTournament(Tournament tournament, int rounds){
+        tournament.setRounds(rounds);
+        tournament.pairNextRound();
+        return tournamentRepository.save(tournament);
+    }
+
+    public Tournament pairNextRoundInTournament(Tournament tournament){
         tournament.pairNextRound();
         return tournamentRepository.save(tournament);
     }
@@ -75,8 +79,21 @@ public class TournamentService {
         return false;
     }
 
-    public Tournament addPlayerToTournament(Tournament tournament, Player player){
+    public Tournament addPlayer(Tournament tournament, Player player){
         tournament.createParticipationForPlayer(player);
+        return tournamentRepository.save(tournament);
+    }
+
+    public Tournament addGameResults(Tournament tournament, int gameId, int scorePlayer1, int scorePlayer2){
+        List<Game> allGames = tournament.getAllGames();
+        for (Game oldGame: allGames) {
+            if(oldGame.getGameId() == gameId){
+                oldGame.setGamesWonPlayer1(scorePlayer1);
+                oldGame.setGamesWonPlayer2(scorePlayer2);
+                oldGame.calculateResult();
+            }
+        }
+        tournament.setAllGames(allGames);
         return tournamentRepository.save(tournament);
     }
 

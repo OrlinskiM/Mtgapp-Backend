@@ -28,28 +28,19 @@ public class TournamentResource {
         this.guestService = guestService;
     }
 
-    @PostMapping("/add")
+    @GetMapping("/add")
     public ResponseEntity<Tournament> addNewTournament(){
         User currentUser = getCurrentUser();
         Tournament tournament = tournamentService.addNewTournament(currentUser);
         return new ResponseEntity<>(tournament, HttpStatus.OK);
     }
 
-    @PostMapping("/{tournamentString}")
-    public ResponseEntity<Tournament> joinTournament(@PathVariable("tournamentString") String tournamentString) throws TournamentNotFoundException {
+    @GetMapping("/{tournamentString}")
+    public ResponseEntity<Tournament> getTournament(@PathVariable("tournamentString") String tournamentString) throws TournamentNotFoundException {
         Tournament tournament = tournamentService.findByTournamentString(tournamentString);
         User currentUser = getCurrentUser();
         tournamentService.validateUserInTournament(tournament, currentUser);
         return new ResponseEntity<>(tournament, HttpStatus.OK);
-    }
-
-
-
-    @GetMapping("/{tournamentString}")
-    public ResponseEntity<Tournament> getTournament(@PathVariable("tournamentString") String tournamentString) throws TournamentNotFoundException {
-        Tournament getTournament = tournamentService.findByTournamentString(tournamentString);
-
-        return new ResponseEntity<>(getTournament, HttpStatus.OK);
     }
 
     @PostMapping("/{tournamentString}/guest")
@@ -61,16 +52,38 @@ public class TournamentResource {
         User currentUser = getCurrentUser();
         tournamentService.validateOwnerInTournament(tournament, currentUser);
         Guest guest = guestService.addNewGuest(firstName,lastName,username);
-        tournamentService.addPlayerToTournament(tournament,guest);
+        tournamentService.addPlayer(tournament,guest);
         return new ResponseEntity<>(tournament, HttpStatus.OK);
     }
 
     @PostMapping("/{tournamentString}/start")
-    public ResponseEntity<Tournament> startTournament(@PathVariable("tournamentString") String tournamentString) throws TournamentNotFoundException {
+    public ResponseEntity<Tournament> startTournament(@PathVariable("tournamentString") String tournamentString,
+                                                      @RequestParam(value = "rounds") int rounds) throws TournamentNotFoundException {
         Tournament tournament = tournamentService.findByTournamentString(tournamentString);
         User currentUser = getCurrentUser();
         tournamentService.validateOwnerInTournament(tournament, currentUser);
-        tournamentService.startTournament(tournament);
+        tournamentService.startTournament(tournament, rounds);
+        return new ResponseEntity<>(tournament, HttpStatus.OK);
+    }
+
+    @GetMapping("/{tournamentString}/nextRound")
+    public ResponseEntity<Tournament> nextRoundTournament(@PathVariable("tournamentString") String tournamentString) throws TournamentNotFoundException {
+        Tournament tournament = tournamentService.findByTournamentString(tournamentString);
+        User currentUser = getCurrentUser();
+        tournamentService.validateOwnerInTournament(tournament, currentUser);
+        tournamentService.pairNextRoundInTournament(tournament);
+        return new ResponseEntity<>(tournament, HttpStatus.OK);
+    }
+
+    @PostMapping("/{tournamentString}/gameResults")
+    public ResponseEntity<Tournament> addGameResults(@PathVariable("tournamentString") String tournamentString,
+                                                     @RequestParam("gamesWonPlayer1") int gamesWonPlayer1,
+                                                     @RequestParam("gamesWonPlayer2") int gamesWonPlayer2,
+                                                     @RequestParam("gameId") int gameId) throws TournamentNotFoundException {
+        Tournament tournament = tournamentService.findByTournamentString(tournamentString);
+        User currentUser = getCurrentUser();
+        tournamentService.validateOwnerInTournament(tournament, currentUser);
+        tournamentService.addGameResults(tournament, gameId, gamesWonPlayer1, gamesWonPlayer2);
         return new ResponseEntity<>(tournament, HttpStatus.OK);
     }
 

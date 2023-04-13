@@ -121,6 +121,12 @@ public class ExceptionHandling implements ErrorController {
         LOGGER.error(exception.getMessage());
         return createHttpResponse(BAD_REQUEST, exception.getMessage());
     }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<HttpResponse> illegalStateException(IllegalStateException exception) {
+        LOGGER.error(exception.getMessage());
+        return createHttpResponse(BAD_REQUEST, exception.getMessage());
+    }
     @RequestMapping(ERROR_PATH)
     public ResponseEntity<HttpResponse> notFound404() {
         return createHttpResponse(NOT_FOUND, "There is no mapping for this URL");

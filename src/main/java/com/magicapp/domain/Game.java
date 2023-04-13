@@ -1,17 +1,14 @@
 package com.magicapp.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.magicapp.enumeration.GameResult;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
 
-import static com.magicapp.enumeration.GameResult.NO_RESULT;
+import static com.magicapp.enumeration.GameResult.*;
 
 @Entity
 @Getter
@@ -32,8 +29,8 @@ public class Game {
     @JsonIgnore
     private RoundMatching roundMatching;
     private int round;
-    private int scorePlayer1;
-    private int scorePlayer2;
+    private int gamesWonPlayer1;
+    private int gamesWonPlayer2;
     @Enumerated(EnumType.STRING)
     private GameResult gameResult;
     @ManyToOne
@@ -52,6 +49,8 @@ public class Game {
 
     public Game(int round, PlayerParticipation player1, PlayerParticipation player2) {
         this.round = round;
+        this.gamesWonPlayer1 = 0;
+        this.gamesWonPlayer2 = 0;
         this.player1 = player1;
         this.player2 = player2;
         this.gameResult = NO_RESULT;
@@ -68,6 +67,18 @@ public class Game {
     public boolean hasPlayerParticipations(PlayerParticipation player1, PlayerParticipation player2) {
         return ((player1.equals(this.player1)) && (player2.equals(this.player2))) ||
                 ((player1.equals(this.player2)) && (player2.equals(this.player1)));
+    }
+
+    public void calculateResult(){
+        if(gamesWonPlayer1 > gamesWonPlayer2){
+            this.setGameResult(PLAYER_1_WON);
+        }
+        if(gamesWonPlayer1 < gamesWonPlayer2){
+            this.setGameResult(PLAYER_2_WON);
+        }
+        if(gamesWonPlayer1 == gamesWonPlayer2){
+            this.setGameResult(DRAW);
+        }
     }
 
     @Override
