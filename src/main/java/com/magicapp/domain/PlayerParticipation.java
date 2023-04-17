@@ -28,15 +28,45 @@ public class PlayerParticipation implements Comparable<PlayerParticipation>{
     @Cascade(org.hibernate.annotations.CascadeType.SAVE_UPDATE)
     @JoinColumn(name = "user_id")
     private Player player;
-
-    private int score;
-    private int roundsWon;
+    private int finalPlacement;
+    private int score;  //matchesWon * 3 + matchesTied + byeRound * 3
+    private int matchesWon;
+    private int matchesLost;
+    private int matchesTied;
     private int gamesWon;
+    private int gamesLost;
     private int byeRound;
+    private float omw; //Opponents’ match-win percentage
+    private float gw; //Game-win percentage
+    private float ogw; //Opponents’ game-win percentage
 
     public PlayerParticipation(Tournament tournament, Player player) {
         this.tournament = tournament;
         this.player = player;
+    }
+
+    public void addToScore(int value){
+        score += value;
+    }
+
+    public void addToMatchesWon(int value){
+        matchesWon += value;
+    }
+
+    public void addToMatchesLost(int value){
+        matchesLost += value;
+    }
+
+    public void addToMatchesTied(int value){
+        matchesTied += value;
+    }
+
+    public void addToGamesWon(int value){
+        gamesWon += value;
+    }
+
+    public void addToGamesLost(int value){
+        gamesLost += value;
     }
 
     @Override

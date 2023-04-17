@@ -69,6 +69,16 @@ public class Match {
                 ((player1.equals(this.player2)) && (player2.equals(this.player1)));
     }
 
+    public PlayerParticipation getOpponent(PlayerParticipation player) {
+        if(player.equals(this.player1)){
+            return player2;
+        }
+        if(player.equals(this.player2)){
+            return player1;
+        }
+        return null;
+    }
+
     public void calculateResult(){
         if(gamesWonPlayer1 > gamesWonPlayer2){
             this.setMatchResult(PLAYER_1_WON);
@@ -78,6 +88,29 @@ public class Match {
         }
         if(gamesWonPlayer1 == gamesWonPlayer2){
             this.setMatchResult(DRAW);
+        }
+    }
+
+    public void setPlayerScores(){
+        player1.addToGamesWon(gamesWonPlayer1);
+        player2.addToGamesWon(gamesWonPlayer2);
+        player1.addToGamesLost(gamesWonPlayer2);
+        player2.addToGamesLost(gamesWonPlayer1);
+
+        if(matchResult == PLAYER_1_WON){
+            player1.addToScore(3);
+            player1.addToMatchesWon(1);
+            player2.addToMatchesLost(1);
+        }
+        if(matchResult == PLAYER_2_WON){
+            player2.addToScore(3);
+            player2.addToMatchesWon(1);
+            player1.addToMatchesLost(1);
+        }
+        if(matchResult == DRAW){
+            player1.addToScore(1);
+            player2.addToScore(1);
+            player1.addToMatchesTied(1);
         }
     }
 

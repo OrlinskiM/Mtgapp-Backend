@@ -69,6 +69,10 @@ public class TournamentService {
         return tournament;
     }
 
+    public Tournament[] findAllByUserId(Long userId){
+        return tournamentRepository.findAllByUserId(userId);
+    }
+
     public boolean isPlayerParticipating(Tournament tournament, Player player){
         List<PlayerParticipation> participations = tournament.getParticipations();
         for (PlayerParticipation participation: participations) {
@@ -98,6 +102,12 @@ public class TournamentService {
     }
 
     public Tournament validateUserInTournament (Tournament tournament, User user){
+        if(tournament.isFinished() && !isPlayerParticipating(tournament, user)){
+            throw new IllegalArgumentException(CANT_JOIN_FINISHED_TOURNAMENT);
+        }
+        if(tournament.isFinished()){
+            return tournament;
+        }
         if(isPlayerParticipating(tournament, user)){
             return tournament;
         }

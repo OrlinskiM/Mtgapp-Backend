@@ -25,7 +25,7 @@ public class RoundMatching {
     private Tournament tournament;
     private int round;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy="roundMatching", cascade = CascadeType.ALL)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy="roundMatching", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Match> matches = new ArrayList<>();
 
     public RoundMatching(int round) {
@@ -53,6 +53,20 @@ public class RoundMatching {
             }
         }
         return false;
+    }
+
+    Match findMatchWithPlayerParticipation(PlayerParticipation player) {
+        Match foundMatch = null;
+        for (Match match : matches) {
+            if (match.hasPlayerParticipation(player)) {
+                foundMatch = match;
+                break;
+            }
+        }
+        if (foundMatch != null) {
+            return foundMatch;
+        }
+        throw new RuntimeException("No match found for playerParticipation");
     }
 
     boolean removeMatchWithPlayerParticipation(PlayerParticipation player) {

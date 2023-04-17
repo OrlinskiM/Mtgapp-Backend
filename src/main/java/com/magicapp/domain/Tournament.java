@@ -1,11 +1,13 @@
 package com.magicapp.domain;
 
 import com.fasterxml.jackson.annotation.*;
+import com.google.common.collect.ComparisonChain;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -18,6 +20,7 @@ import java.util.*;
 @NoArgsConstructor
 @Table(name = "tournament")
 public class Tournament implements Serializable {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(nullable = false)
@@ -34,7 +37,7 @@ public class Tournament implements Serializable {
     private User owner;
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "tournament", cascade = CascadeType.ALL)
     private List<PlayerParticipation> participations = new ArrayList<>();
-    @OneToMany(fetch = FetchType.LAZY, mappedBy="tournament", cascade = CascadeType.ALL)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy="tournament", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Match> allMatches = new ArrayList<>();
     @OneToMany(fetch = FetchType.EAGER, mappedBy="tournament", cascade = CascadeType.ALL)
     private List<RoundMatching> roundMatchings = new ArrayList<>();
@@ -75,11 +78,6 @@ public class Tournament implements Serializable {
             throw new IllegalArgumentException("Tournament ended after " + rounds + " rounds");
         }
 
-        if (currentRound == rounds+1) {
-            this.finishDate = new Date();
-            this.isFinished = true;
-            throw new IllegalArgumentException("calculate results");
-        }
 
         if (currentRound == 1) {
             return firstRoundRandomMatching();
@@ -91,17 +89,147 @@ public class Tournament implements Serializable {
             throw new IllegalStateException("Round " + (currentRound - 1) + " results were not set yet");
         }
 
+        calculatePlayerScores(lastRoundMatching);
+
+        if (currentRound == rounds+1) {
+            this.currentRound = rounds;
+            this.finishDate = new Date();
+            this.isFinished = true;
+            calculateFinalPlacement();
+            return lastRoundMatching;
+        }
+
         // pair new round
         RoundMatching matching = getNextRoundMatching();
         roundMatchings.add(matching);
         return matching;
     }
 
+    private void calculateFinalPlacement() {
+        List<PlayerParticipation> sortedPlayers = new ArrayList<PlayerParticipation>(participations);
+        Collections.sort(sortedPlayers, new Comparator<PlayerParticipation>() {
+            @Override
+            public int compare(PlayerParticipation o1, PlayerParticipation o2) {
+                return ComparisonChain.start()
+                        .compare(o1.getScore(), o2.getScore())
+                        .compare(o1.getOmw(), o2.getOmw())
+                        .compare(o1.getGw(), o2.getGw())
+                        .compare(o1.getOgw(), o2.getOgw())
+                        .result();
+            }
+        });
+        int index = sortedPlayers.size();
+        for(PlayerParticipation player: sortedPlayers){
+            player.setFinalPlacement(index);
+            index--;
+        }
+    }
+
+    private void calculatePlayerScores(RoundMatching lastRoundMatching) {
+        //first, set all scores from previous round
+        for(Match match: lastRoundMatching.getMatches()){
+            match.setPlayerScores();
+        }
+
+        //second, calculate tiebreakers
+        for(PlayerParticipation player: participations){
+            //add a win for bye player
+            if(player.getByeRound() == currentRound-1){
+                player.addToScore(3);
+                player.addToGamesWon(2);
+            }
+
+            setPlayerOmw(player);
+            setPlayerGw(player);
+            setPlayerOgw(player);
+
+        }
+
+
+    }
+
+    private boolean setPlayerGw(PlayerParticipation player) {
+        //calculate players game win % (gw)
+        float gw = 0;
+        //game points divided by total number of games played * 3
+        float gameScore = player.getGamesWon() * 3;
+        float maxPossibleGameScore = (player.getGamesWon() + player.getGamesLost()) * 3;
+
+        gw = Math.round((gameScore/maxPossibleGameScore)*100f)/100f;
+        player.setGw(gw);
+
+        return true;
+    }
+
+    private boolean setPlayerOmw(PlayerParticipation player){
+        //calculate players opponent match win % (omw)
+        float omw = 0;
+        int maxPossibleScore = (currentRound-1)*3;
+        List<PlayerParticipation> opponents = getPlayersOpponentsList(player);
+        //add all opponents percentages
+        for(PlayerParticipation opponent: opponents){
+            int opponentsScore = opponent.getScore();
+            float opponentPercent = ((float)opponentsScore)/maxPossibleScore;
+            if(opponentPercent > 0.33){
+                omw += opponentPercent;
+            } else{
+                omw += 0.33f;
+            }
+
+        }
+        //divide by number of opponents
+        omw = Math.round(omw/((float)opponents.size())*100f)/100f;
+        //omw can't be smaller than 0.33
+        if(omw < 0.33){
+            omw = 0.33f;
+        }
+        player.setOmw(omw);
+        return true;
+    }
+
+    private boolean setPlayerOgw(PlayerParticipation player){
+        //calculate players opponent game win % (ogw)
+        float ogw = 0;
+        List<PlayerParticipation> opponents = getPlayersOpponentsList(player);
+        //add all opponents percentages
+        for(PlayerParticipation opponent: opponents){
+            int opponentsGameScore = opponent.getGamesWon() * 3;
+            int maxPossibleGameScore = (opponent.getGamesWon() + opponent.getGamesLost())*3;
+            float opponentPercent = ((float)opponentsGameScore)/maxPossibleGameScore;
+            if(opponentPercent > 0.33){
+                ogw += opponentPercent;
+            } else{
+                ogw += 0.33f;
+            }
+
+        }
+        //divide by number of opponents
+        ogw = Math.round(ogw/((float)opponents.size())*100f)/100f;
+        //omw can't be smaller than 0.33
+        if(ogw < 0.33){
+            ogw = 0.33f;
+        }
+        player.setOgw(ogw);
+        return true;
+    }
+
+    private List<PlayerParticipation> getPlayersOpponentsList(PlayerParticipation player) {
+        List<PlayerParticipation> opponents = new ArrayList<>();
+        for(Match match: allMatches){
+            PlayerParticipation opponent = match.getOpponent(player);
+            if(opponent != null){
+                opponents.add(opponent);
+            }
+        }
+        return opponents;
+    }
+
     private RoundMatching getNextRoundMatching() {
         Logger LOGGER = LoggerFactory.getLogger(getClass());
         // sort the players based on their score
+        List<Match> allMatchesTemp = allMatches;
         List<PlayerParticipation> sortedPlayers = new ArrayList<PlayerParticipation>(participations);
-        Collections.sort(sortedPlayers);
+        Collections.sort(sortedPlayers, Collections.reverseOrder());
         Long byePlayerId = -1L;
         int numberOfPlayers = participations.size();
         RoundMatching newMatching = new RoundMatching(currentRound);
@@ -109,8 +237,8 @@ public class Tournament implements Serializable {
 
         if ((numberOfPlayers % 2) == 1) {
             // choose a bye player
-            int index = 0;
-            while (index <= numberOfPlayers) {
+            int index = numberOfPlayers-1;
+            while (index >= 0) {
                 PlayerParticipation player = sortedPlayers.get(index);
                 if (player.getByeRound() == 0) {
                     player.setByeRound(currentRound);
@@ -118,7 +246,7 @@ public class Tournament implements Serializable {
                     LOGGER.info("player " + player + " bye round " + currentRound);
                     break;
                 }
-                index++;
+                index--;
             }
         }
 
@@ -144,7 +272,7 @@ public class Tournament implements Serializable {
             for (int j = i + 1; j < numberOfPlayers; j++) {
 
                 PlayerParticipation nextScorePlayer;
-                nextScorePlayer = participations.get(j);
+                nextScorePlayer = sortedPlayers.get(j);
 
                 if (nextScorePlayer.getId() == byePlayerId) {
                     LOGGER.info(nextScorePlayer + " bye this round");
@@ -168,6 +296,7 @@ public class Tournament implements Serializable {
                 allMatches.add(match);
                 newMatching.addMatch(match);
                 matchForBestPlayerFound = true;
+                LOGGER.info("1matching " + bestScorePlayer.toString() + " and " + nextScorePlayer.toString());
                 break;
             }
 
@@ -205,7 +334,7 @@ public class Tournament implements Serializable {
 
                 for (int p = numberOfPlayers - 1; p >= 0; p--) {
 
-                    switchPlayer = participations.get(p);
+                    switchPlayer = sortedPlayers.get(p);
 
                     // check that the switch player is not scheduled, and that it is not the bye user, or the best
                     // score user, or the chosen pairs wid,bid
@@ -227,19 +356,16 @@ public class Tournament implements Serializable {
                     if (!((listContainsMatchBetweenPlayers(allMatches, player1, switchPlayer)) ||
                             (listContainsMatchBetweenPlayers(allMatches, player2, bestScorePlayer)))) {
                         // we can switch. wid vs the switch user, best player vs bid
-                        LOGGER.info("pairing remove match " + pairedMatch);
+                        LOGGER.info("pairing update match " + pairedMatch.getMatchId());
 
-                        if (!newMatching.removeMatchWithPlayerParticipation(player1)) {
-                            LOGGER.error("could not remove match with " + player1);
-                            return null;
-                        }
 
-                        Match match = new Match(currentRound, player1, switchPlayer);
-                        allMatches.add(match);
-                        newMatching.addMatch(match);
+                        pairedMatch.setPlayer1(player1);
+                        pairedMatch.setPlayer2(switchPlayer);
+                        LOGGER.info("2matching " + switchPlayer.toString() + " and " + player1.toString());
                         Match match2 = new Match(currentRound, player2, bestScorePlayer);
                         allMatches.add(match2);
                         newMatching.addMatch(match2);
+                        LOGGER.info("3matching " + bestScorePlayer.toString() + " and " + player2.toString());
 
                         matchForBestPlayerFound = true;
                         break;
@@ -248,16 +374,11 @@ public class Tournament implements Serializable {
                     if (!((listContainsMatchBetweenPlayers(allMatches, player2, switchPlayer)) ||
                             (listContainsMatchBetweenPlayers(allMatches, player1, bestScorePlayer)))) {
                         // we can switch. wid vs the switch user, best player vs bid
-                        LOGGER.info("pairing remove match " + pairedMatch);
+                        LOGGER.info("pairing update match " + pairedMatch);
 
-                        if (!newMatching.removeMatchWithPlayerParticipation(player1)) {
-                            LOGGER.error("could not remove match with " + player1);
-                            return null;
-                        }
 
-                        Match match = new Match(currentRound, player2, switchPlayer);
-                        allMatches.add(match);
-                        newMatching.addMatch(match);
+                        pairedMatch.setPlayer1(player2);
+                        pairedMatch.setPlayer2(switchPlayer);
                         Match match2 = new Match(currentRound, player1, bestScorePlayer);
                         allMatches.add(match2);
                         newMatching.addMatch(match2);
@@ -281,6 +402,21 @@ public class Tournament implements Serializable {
 
         return newMatching;
     }
+
+    private boolean removeMatchWithPlayerParticipationFromAll(PlayerParticipation player) {
+        Match foundMatch = null;
+        for (Match match : allMatches) {
+            if (match.hasPlayerParticipation(player)) {
+                foundMatch = match;
+                break;
+            }
+        }
+        if (foundMatch != null) {
+            return allMatches.remove(foundMatch);
+        }
+        return false;
+    }
+
 
     private static boolean listContainsMatchBetweenPlayers(List<Match> matches, PlayerParticipation player1, PlayerParticipation player2) {
         for (Match match : matches) {

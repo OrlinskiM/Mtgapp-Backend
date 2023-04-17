@@ -43,6 +43,13 @@ public class TournamentResource {
         return new ResponseEntity<>(tournament, HttpStatus.OK);
     }
 
+    @GetMapping("/findAll")
+    public ResponseEntity<Tournament[]> findAllUsersTournaments() {
+        User currentUser = getCurrentUser();
+        Tournament[] tournaments = tournamentService.findAllByUserId(currentUser.getUserId());
+        return new ResponseEntity<>(tournaments, HttpStatus.OK);
+    }
+
     @PostMapping("/{tournamentString}/guest")
     public ResponseEntity<Tournament> addGuestToTournament(@PathVariable("tournamentString") String tournamentString,
                                                            @RequestParam(value = "firstName", required = false) String firstName,
@@ -88,24 +95,6 @@ public class TournamentResource {
     }
 
 
-
-    @PostMapping("/{tournamentString}/update")
-    public ResponseEntity<Tournament> updateTournament(@PathVariable("tournamentString") String tournamentString,
-                                                 @RequestParam("userId") Long userId) throws TournamentNotFoundException {
-        Tournament tournament = tournamentService.findByTournamentString(tournamentString);
-        User user = userService.findUserByUserId(userId);
-        PlayerParticipation participation = tournament.createParticipationForPlayer(user);
-        Guest guest = guestService.addNewGuest("mati", "", "");
-        tournament.createParticipationForPlayer(guest);
-        RoundMatching roundMatching = new RoundMatching(1);
-        tournament.addRoundMatching(roundMatching);
-        roundMatching.addMatch(new Match(1,participation, participation));
-
-////        Match game = new Match(2L, user, user);
-//        tournament.addGame(game);
-        tournamentService.saveTournament(tournament);
-        return new ResponseEntity<>(tournament, HttpStatus.OK);
-    }
     private User getCurrentUser() {
         String currentUserName = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userService.findUserByUsername(currentUserName);
