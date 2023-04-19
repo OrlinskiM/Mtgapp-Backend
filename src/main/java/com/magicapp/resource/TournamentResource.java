@@ -2,6 +2,7 @@ package com.magicapp.resource;
 
 import com.magicapp.domain.*;
 import com.magicapp.exception.domain.TournamentNotFoundException;
+import com.magicapp.exception.domain.UserNotFoundException;
 import com.magicapp.service.GuestService;
 import com.magicapp.service.TournamentService;
 import com.magicapp.service.UserService;
@@ -29,14 +30,14 @@ public class TournamentResource {
     }
 
     @GetMapping("/add")
-    public ResponseEntity<Tournament> addNewTournament(){
+    public ResponseEntity<Tournament> addNewTournament() throws UserNotFoundException {
         User currentUser = getCurrentUser();
         Tournament tournament = tournamentService.addNewTournament(currentUser);
         return new ResponseEntity<>(tournament, HttpStatus.OK);
     }
 
     @GetMapping("/{tournamentString}")
-    public ResponseEntity<Tournament> getTournament(@PathVariable("tournamentString") String tournamentString) throws TournamentNotFoundException {
+    public ResponseEntity<Tournament> getTournament(@PathVariable("tournamentString") String tournamentString) throws TournamentNotFoundException, UserNotFoundException {
         Tournament tournament = tournamentService.findByTournamentString(tournamentString);
         User currentUser = getCurrentUser();
         tournamentService.validateUserInTournament(tournament, currentUser);
@@ -44,7 +45,7 @@ public class TournamentResource {
     }
 
     @GetMapping("/findAll")
-    public ResponseEntity<Tournament[]> findAllUsersTournaments() {
+    public ResponseEntity<Tournament[]> findAllUsersTournaments() throws UserNotFoundException {
         User currentUser = getCurrentUser();
         Tournament[] tournaments = tournamentService.findAllByUserId(currentUser.getUserId());
         return new ResponseEntity<>(tournaments, HttpStatus.OK);
@@ -54,7 +55,7 @@ public class TournamentResource {
     public ResponseEntity<Tournament> addGuestToTournament(@PathVariable("tournamentString") String tournamentString,
                                                            @RequestParam(value = "firstName", required = false) String firstName,
                                                            @RequestParam(value = "lastName", required = false) String lastName,
-                                                           @RequestParam(value = "username") String username) throws TournamentNotFoundException {
+                                                           @RequestParam(value = "username") String username) throws TournamentNotFoundException, UserNotFoundException {
         Tournament tournament = tournamentService.findByTournamentString(tournamentString);
         User currentUser = getCurrentUser();
         tournamentService.validateOwnerInTournament(tournament, currentUser);
@@ -65,7 +66,7 @@ public class TournamentResource {
 
     @PostMapping("/{tournamentString}/start")
     public ResponseEntity<Tournament> startTournament(@PathVariable("tournamentString") String tournamentString,
-                                                      @RequestParam(value = "rounds") int rounds) throws TournamentNotFoundException {
+                                                      @RequestParam(value = "rounds") int rounds) throws TournamentNotFoundException, UserNotFoundException {
         Tournament tournament = tournamentService.findByTournamentString(tournamentString);
         User currentUser = getCurrentUser();
         tournamentService.validateOwnerInTournament(tournament, currentUser);
@@ -74,7 +75,7 @@ public class TournamentResource {
     }
 
     @GetMapping("/{tournamentString}/nextRound")
-    public ResponseEntity<Tournament> nextRoundTournament(@PathVariable("tournamentString") String tournamentString) throws TournamentNotFoundException {
+    public ResponseEntity<Tournament> nextRoundTournament(@PathVariable("tournamentString") String tournamentString) throws TournamentNotFoundException, UserNotFoundException {
         Tournament tournament = tournamentService.findByTournamentString(tournamentString);
         User currentUser = getCurrentUser();
         tournamentService.validateOwnerInTournament(tournament, currentUser);
@@ -86,7 +87,7 @@ public class TournamentResource {
     public ResponseEntity<Tournament> addMatchResults(@PathVariable("tournamentString") String tournamentString,
                                                      @RequestParam("gamesWonPlayer1") int gamesWonPlayer1,
                                                      @RequestParam("gamesWonPlayer2") int gamesWonPlayer2,
-                                                     @RequestParam("matchId") int matchId) throws TournamentNotFoundException {
+                                                     @RequestParam("matchId") int matchId) throws TournamentNotFoundException, UserNotFoundException {
         Tournament tournament = tournamentService.findByTournamentString(tournamentString);
         User currentUser = getCurrentUser();
         tournamentService.validateOwnerInTournament(tournament, currentUser);
@@ -95,7 +96,7 @@ public class TournamentResource {
     }
 
 
-    private User getCurrentUser() {
+    private User getCurrentUser() throws UserNotFoundException {
         String currentUserName = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userService.findUserByUsername(currentUserName);
         return currentUser;

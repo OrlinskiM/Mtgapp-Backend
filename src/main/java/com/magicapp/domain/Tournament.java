@@ -396,7 +396,7 @@ public class Tournament implements Serializable {
             if (!matchForBestPlayerFound) {
                 // nothing to do... probably not enough players or some crazy pairing
                 LOGGER.error("could not match all players. not enough players ?");
-                break;
+                throw new IllegalStateException("Could not match all players. not enough players?");
             }
         }
 

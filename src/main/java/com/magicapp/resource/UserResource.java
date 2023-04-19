@@ -69,7 +69,7 @@ public class UserResource extends ExceptionHandling {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<User> login(@RequestBody User user) {
+    public ResponseEntity<User> login(@RequestBody User user) throws UserNotFoundException {
         authenticate(user.getUsername(), user.getPassword());
         User loginUser = userService.findUserByUsername(user.getUsername());
         UserPrincipal userPrincipal = new UserPrincipal(loginUser);
@@ -102,14 +102,14 @@ public class UserResource extends ExceptionHandling {
     @PreAuthorize("#username == authentication.name or hasAnyAuthority('user:update')")
 //    @PreAuthorize("hasAnyAuthority('user:update')")
     @PostMapping("/update")
-    public ResponseEntity<User> updateNewUser(@RequestParam("firstName") String firstName,
-                                          @RequestParam("currentUsername") String currentUsername,
-                                          @RequestParam("lastName") String lastName,
-                                          @RequestParam("username") String username,
-                                          @RequestParam("email") String email,
-                                          @RequestParam("role") String role,
-                                          @RequestParam("isActive") String isActive,
-                                          @RequestParam("isNonLocked") String isNonLocked,
+    public ResponseEntity<User> updateNewUser(@RequestParam(value = "firstName", required = false) String firstName,
+                                          @RequestParam(value = "currentUsername", required = false) String currentUsername,
+                                          @RequestParam(value = "lastName", required = false) String lastName,
+                                          @RequestParam(value = "username", required = false) String username,
+                                          @RequestParam(value = "email", required = false) String email,
+                                          @RequestParam(value = "role", required = false) String role,
+                                          @RequestParam(value = "isActive", required = false) String isActive,
+                                          @RequestParam(value = "isNonLocked", required = false) String isNonLocked,
                                           @RequestParam(value = "profileImage", required = false) MultipartFile profileImage)
             throws UserNotFoundException, EmailExistException, IOException, UsernameExistException {
         User updatedUser = userService.updateUser(currentUsername, firstName, lastName, username,email, role,
@@ -118,8 +118,8 @@ public class UserResource extends ExceptionHandling {
 
     }
 
-    @GetMapping("/find/{username}")
-    public ResponseEntity<User> getUser(@PathVariable("username") String username){
+    @GetMapping("/{username}")
+    public ResponseEntity<User> getUser(@PathVariable("username") String username) throws UserNotFoundException {
         User user = userService.findUserByUsername(username);
         return new ResponseEntity<>(user, OK);
     }
@@ -155,40 +155,6 @@ public class UserResource extends ExceptionHandling {
         return Files.readAllBytes(Paths.get(USER_FOLDER + username + FORWARD_SLASH + fileName));
     }
 
-    @GetMapping(path = "/image/profile/{username}", produces = IMAGE_PNG_VALUE)
-    public byte[] getTempProfilePicture(@PathVariable("username") String username) throws IOException {
-        RestTemplate restTemplate = new RestTemplate();
-        URL url = new URL ("http://127.0.0.1:7860/sdapi/v1/txt2img");
-        HttpURLConnection con = (HttpURLConnection)url.openConnection();
-        con.setRequestMethod("POST");
-        con.setRequestProperty("Content-Type", "application/json");
-        con.setRequestProperty("Accept", "application/json");
-        con.setDoOutput(true);
-        String jsonString = "{" +
-                "   \"prompt\": \"magic the gathering, " + username + "\"," +
-                "    \"steps\": 15" +
-                "}";
-        try(OutputStream os = con.getOutputStream()) {
-            byte[] input = jsonString.getBytes("utf-8");
-            os.write(input, 0, input.length);
-        }
-        StringBuilder response = new StringBuilder();
-        try(BufferedReader br = new BufferedReader(
-                new InputStreamReader(con.getInputStream(), "utf-8"))) {
-            String responseLine = null;
-            while ((responseLine = br.readLine()) != null) {
-                response.append(responseLine.trim());
-            }
-        }
-        JsonObject jsonObject = new JsonParser().parse(response.toString()).getAsJsonObject();
-
-        byte[] decodedImage = Base64.getDecoder().decode(jsonObject.get("images").getAsString());
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.setContentType(MediaType.APPLICATION_JSON);
-//
-//        LOGGER.info(jsonString);
-        return decodedImage;
-    }
 
     private ResponseEntity<HttpResponse> response(HttpStatus httpStatus, String message) {
         return new ResponseEntity<>(new HttpResponse(httpStatus.value(), httpStatus, httpStatus.getReasonPhrase().toUpperCase(),
