@@ -78,7 +78,6 @@ public class Tournament implements Serializable {
             throw new IllegalArgumentException("Tournament ended after " + rounds + " rounds");
         }
 
-
         if (currentRound == 1) {
             return firstRoundRandomMatching();
         }
@@ -91,7 +90,7 @@ public class Tournament implements Serializable {
 
         calculatePlayerScores(lastRoundMatching);
 
-        if (currentRound == rounds+1) {
+        if (currentRound > rounds) {
             this.currentRound = rounds;
             this.finishDate = new Date();
             this.isFinished = true;
@@ -106,18 +105,13 @@ public class Tournament implements Serializable {
     }
 
     private void calculateFinalPlacement() {
-        List<PlayerParticipation> sortedPlayers = new ArrayList<PlayerParticipation>(participations);
-        Collections.sort(sortedPlayers, new Comparator<PlayerParticipation>() {
-            @Override
-            public int compare(PlayerParticipation o1, PlayerParticipation o2) {
-                return ComparisonChain.start()
-                        .compare(o1.getScore(), o2.getScore())
-                        .compare(o1.getOmw(), o2.getOmw())
-                        .compare(o1.getGw(), o2.getGw())
-                        .compare(o1.getOgw(), o2.getOgw())
-                        .result();
-            }
-        });
+        List<PlayerParticipation> sortedPlayers = new ArrayList<>(participations);
+        Collections.sort(sortedPlayers, (o1, o2) -> ComparisonChain.start()
+                .compare(o1.getScore(), o2.getScore())
+                .compare(o1.getOmw(), o2.getOmw())
+                .compare(o1.getGw(), o2.getGw())
+                .compare(o1.getOgw(), o2.getOgw())
+                .result());
         int index = sortedPlayers.size();
         for(PlayerParticipation player: sortedPlayers){
             player.setFinalPlacement(index);
